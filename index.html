@@ -100,6 +100,7 @@
     background: rgba(255,255,255,.7); box-shadow: 0 10px 30px rgba(74,38,17,.1);
   }
   .mensaje p { font-size: 17px; line-height: 1.7; }
+  .mensaje .grande { font-family: "Playfair Display", serif; font-weight: 900; font-size: clamp(22px, 6.8vw, 30px); line-height: 1.3; letter-spacing: .03em; color: var(--cafe); }
   .rango { display: flex; justify-content: center; gap: 12px; margin-top: 18px; }
   .rango div { flex: 1; max-width: 170px; padding: 12px 8px; border-radius: 14px; background: var(--crema); }
   .rango small { display: block; font-size: 12px; letter-spacing: .15em; text-transform: uppercase; color: var(--verde); font-weight: 600; }
@@ -151,7 +152,7 @@
   </div>
 
   <div class="mensaje entra">
-    <p>Que este año te traiga salud, risas, buena comida y muchas aventuras. ¡Gracias por ser parte de la familia!</p>
+    <p class="grande">ERES EL MEJOR,<br>CUÍDATE MUCHO CUÑADITO</p>
   </div>
   <p class="firma entra">Feliz cumpleaños, cuñadito.<br>Eres el mejor cuñado del mundo.</p>
 </main>
@@ -234,51 +235,64 @@ function loop() {
 loop();
 addEventListener('pointerdown', e => { if (!e.target.closest('button')) fuego(e.clientX, e.clientY); });
 
-// ---------- Música: "Cumpleaños feliz" con piano, bajo y acordes de vals ----------
-let ac, salida, sonando = false, timer;
+// ---------- Música: "Cumpleaños feliz" ----------
+// Se genera una sola vez como archivo de audio (WAV) y se reproduce con <audio>:
+// en iPhone suena aunque el interruptor de silencio esté activado y sin chasquidos.
 const f = n => 440 * Math.pow(2, (n - 69) / 12); // número MIDI -> Hz
-// melodía [nota MIDI, tiempos] en compás de 3/4 (empieza en anacrusa)
 const melodia = [[67,.75],[67,.25],[69,1],[67,1],[72,1],[71,2],[67,.75],[67,.25],[69,1],[67,1],[74,1],[72,2],
   [67,.75],[67,.25],[79,1],[76,1],[72,1],[71,1],[69,2],[77,.75],[77,.25],[76,1],[72,1],[74,1],[72,3]];
-// acordes por compás (raíz, tercera, quinta)
-const acordes = [[48,52,55],[43,50,55],[43,50,55],[48,52,55],[48,52,55],[41,48,53],[48,52,55],[43,50,55],[48,52,55]];
+const acordes = [[48,52,55],[43,50,53],[43,50,53],[48,52,55],[48,52,55],[41,48,53],[48,52,55],[43,50,53],[48,52,55]];
+const BEAT = .52, SR = 32000;
 
-function iniciarAudio() {
-  ac = new (window.AudioContext || window.webkitAudioContext)();
-  const comp = ac.createDynamicsCompressor(); comp.connect(ac.destination);
-  salida = ac.createGain(); salida.gain.value = .8; salida.connect(comp);
-  // Reverberación suave generada (sin archivos)
-  const rev = ac.createConvolver(), len = ac.sampleRate * 2, ir = ac.createBuffer(2, len, ac.sampleRate);
-  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
-  rev.buffer = ir; const mezcla = ac.createGain(); mezcla.gain.value = .25;
-  salida.connect(rev).connect(mezcla).connect(comp);
+function wav(buf) {
+  const d = buf.getChannelData(0); let pico = 0;
+  for (let i = 0; i < d.length; i++) pico = Math.max(pico, Math.abs(d[i]));
+  const k = pico ? .8 / pico : 1, n = d.length, v = new DataView(new ArrayBuffer(44 + n * 2));
+  const txt = (o, t) => [...t].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+  txt(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); txt(8, 'WAVEfmt '); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, SR, true); v.setUint32(28, SR * 2, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true); txt(36, 'data'); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, d[i] * k)) * 32767, true);
+  return new Blob([v], { type: 'audio/wav' });
 }
-// Sonido tipo piano/campanita: armónicos con caída
-function piano(n, ini, dur, vol) {
-  [[1, 1], [2, .35], [3, .12], [4, .06]].forEach(([h, a]) => {
-    const o = ac.createOscillator(), g = ac.createGain();
-    o.type = 'sine'; o.frequency.value = f(n) * h;
-    g.gain.setValueAtTime(0, ini);
-    g.gain.linearRampToValueAtTime(vol * a, ini + .01);
-    g.gain.exponentialRampToValueAtTime(.0001, ini + Math.max(dur, .4) * 1.6 / h);
-    o.connect(g).connect(salida); o.start(ini); o.stop(ini + 3);
-  });
-}
-function tocar() {
-  const b = .5; let t = ac.currentTime + .15;
-  const inicio = t + b; // el primer compás completo empieza tras la anacrusa (1 tiempo)
-  melodia.forEach(([n, d]) => { piano(n, t, d * b, .22); t += d * b; });
+function generarCancion() {
+  const total = melodia.reduce((a, [, d]) => a + d, 0) * BEAT + 2;
+  const Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const oc = new Off(1, Math.ceil(total * SR), SR);
+  const mezcla = oc.createGain(); mezcla.gain.value = .9; mezcla.connect(oc.destination);
+  // Eco suave y limpio (sin ruido)
+  const eco = oc.createDelay(); eco.delayTime.value = .18;
+  const fb = oc.createGain(); fb.gain.value = .22; const filtro = oc.createBiquadFilter(); filtro.frequency.value = 2500;
+  mezcla.connect(eco); eco.connect(filtro).connect(fb).connect(eco); fb.connect(oc.destination);
+  // Nota tipo piano suave: fundamental + armónicos leves, ataque y caída sin clics
+  function nota(n, ini, dur, vol) {
+    [[1, 1], [2, .25], [3, .08]].forEach(([h, a]) => {
+      const o = oc.createOscillator(), g = oc.createGain();
+      o.type = 'sine'; o.frequency.value = f(n) * h;
+      const fin = ini + Math.min(Math.max(dur * 1.4, .5), 2.2);
+      g.gain.setValueAtTime(0, ini);
+      g.gain.linearRampToValueAtTime(vol * a, ini + .015);
+      g.gain.setTargetAtTime(0, ini + .02, (fin - ini) / (3 + h));
+      o.connect(g).connect(mezcla); o.start(ini); o.stop(fin + .3);
+    });
+  }
+  let t = .05; const comp1 = t + BEAT;
+  melodia.forEach(([n, d]) => { nota(n, t, d * BEAT, .32); t += d * BEAT; });
   acordes.forEach((ch, k) => {
-    const c0 = inicio + k * 3 * b;
-    piano(ch[0], c0, b, .14); // bajo en el tiempo 1
-    [1, 2].forEach(i => ch.forEach(n => piano(n + 12, c0 + i * b, b * .6, .045))); // acorde en 2 y 3
+    const c0 = comp1 + k * 3 * BEAT;
+    nota(ch[0], c0, BEAT * 1.5, .16);
+    [1, 2].forEach(i => ch.forEach(n => nota(n + 12, c0 + i * BEAT, BEAT * .7, .05)));
   });
-  timer = setTimeout(() => { if (sonando) tocar(); }, (t - ac.currentTime + 1.5) * 1000);
+  return oc.startRendering ? new Promise(ok => { oc.oncomplete = e => ok(e.renderedBuffer); oc.startRendering(); }) : null;
 }
+
+const audio = new Audio(); audio.loop = true; audio.preload = 'auto';
+audio.setAttribute('playsinline', ''); audio.volume = 1;
+let sonando = false;
 const btn = document.getElementById('musica');
-function musicaOn() { if (!ac) iniciarAudio(); ac.resume(); if (!sonando) { sonando = true; tocar(); } btn.classList.remove('off'); }
-function musicaOff() { sonando = false; clearTimeout(timer); ac && ac.suspend(); btn.classList.add('off'); }
-btn.onclick = () => { if (sonando) musicaOff(); else { if (ac) { ac.close(); ac = null; } musicaOn(); } };
+function musicaOn() { const p = audio.play(); sonando = true; btn.classList.remove('off'); return p; }
+function musicaOff() { audio.pause(); sonando = false; btn.classList.add('off'); }
+btn.onclick = () => sonando ? musicaOff() : musicaOn();
 
 // ---------- Arranque ----------
 let empezado = false;
@@ -290,16 +304,14 @@ function celebrar() {
   let k = 0; const show = setInterval(() => { fuego(rnd(W * .15, W * .85), rnd(H * .12, H * .45)); if (++k > 6) clearInterval(show); }, 380);
   setInterval(() => fuego(rnd(W * .15, W * .85), rnd(H * .1, H * .4)), 2800);
 }
-// Intenta sonar sola; si el teléfono lo bloquea, muestra el sobre
-iniciarAudio();
-ac.resume().catch(() => {});
-setTimeout(() => {
-  if (ac.state === 'running') { musicaOn(); celebrar(); }
-  else document.getElementById('inicio').classList.add('visible');
-}, 300);
+const verSobre = () => document.getElementById('inicio').classList.add('visible');
+generarCancion().then(b => {
+  audio.src = URL.createObjectURL(wav(b));
+  // Intenta sonar sola; si el teléfono lo bloquea, muestra el sobre
+  const p = musicaOn();
+  if (p && p.then) p.then(celebrar, () => { musicaOff(); verSobre(); }); else celebrar();
+}).catch(verSobre);
 document.getElementById('abrir').onclick = () => { musicaOn(); celebrar(); };
-// Por si acaso: el primer toque en cualquier parte arranca la música
-['pointerup', 'touchend', 'keydown'].forEach(ev => addEventListener(ev, () => { if (!sonando && empezado) musicaOn(); }, { once: true }));
 </script>
 </body>
 </html>
