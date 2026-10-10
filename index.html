@@ -293,6 +293,14 @@ const btn = document.getElementById('musica');
 function musicaOn() { const p = audio.play(); sonando = true; btn.classList.remove('off'); return p; }
 function musicaOff() { audio.pause(); sonando = false; btn.classList.add('off'); }
 btn.onclick = () => sonando ? musicaOff() : musicaOn();
+// Pausa al salir de la página o cambiar de app; reanuda al volver
+let pausadaPorSalir = false;
+function alSalir() { if (sonando) { musicaOff(); pausadaPorSalir = true; } }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) alSalir();
+  else if (pausadaPorSalir) { pausadaPorSalir = false; musicaOn(); }
+});
+addEventListener('pagehide', alSalir);
 
 // ---------- Arranque ----------
 let empezado = false;
