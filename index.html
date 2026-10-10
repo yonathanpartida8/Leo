@@ -27,7 +27,7 @@
   body {
     font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--crema); color: var(--cafe); text-align: center; overflow-x: hidden;
-    min-height: 100dvh; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    font-variant-numeric: lining-nums; min-height: 100dvh; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
   }
   canvas { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
 
@@ -54,7 +54,7 @@
     border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--naranja2), var(--naranja));
     box-shadow: 0 3px 8px rgba(242,119,26,.5);
   }
-  #inicio h2 { font-family: "Playfair Display", serif; font-style: italic; font-size: 26px; }
+  #inicio h2 { font-family: "Playfair Display", serif; font-size: clamp(22px, 6.5vw, 30px); letter-spacing: .04em; line-height: 1.25; }
   .boton {
     border: 0; border-radius: 999px; padding: 16px 36px; font: 600 17px "Poppins", sans-serif;
     color: var(--blanco); background: linear-gradient(135deg, var(--naranja2), var(--naranja));
@@ -104,7 +104,7 @@
   .rango div { flex: 1; max-width: 170px; padding: 12px 8px; border-radius: 14px; background: var(--crema); }
   .rango small { display: block; font-size: 12px; letter-spacing: .15em; text-transform: uppercase; color: var(--verde); font-weight: 600; }
   .rango b { font-family: "Playfair Display", serif; font-size: clamp(22px, 6.5vw, 28px); color: var(--naranja); }
-  .firma { font-family: "Playfair Display", serif; font-style: italic; font-size: 20px; margin-top: 8px; }
+  .firma { font-family: "Playfair Display", serif; font-style: italic; font-size: clamp(22px, 6.5vw, 28px); line-height: 1.35; color: var(--naranja); margin-top: 8px; }
 
   #musica {
     position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 6;
@@ -128,7 +128,7 @@
 
 <div id="inicio">
   <div class="sobre"><div class="sello"></div></div>
-  <h2>Tienes una sorpresa</h2>
+  <h2>PARA MI CUÑADITO FAVORITO</h2>
   <button class="boton" id="abrir">Abrir</button>
 </div>
 
@@ -147,17 +147,13 @@
 
   <div class="polaroid gif entra">
     <img src="gif/cumple.gif" alt="Gatito bailando">
-    <p>¡A bailar, que es tu día!</p>
+    <p>Que cumplas 500 años más</p>
   </div>
 
   <div class="mensaje entra">
-    <p>Que cumplas muchos años más:</p>
-    <div class="rango">
-      <div><small>Mínimo</small><b class="num" data-fin="500">0</b></div>
-      <div><small>Máximo</small><b class="num" data-fin="10000000">0</b></div>
-    </div>
+    <p>Que este año te traiga salud, risas, buena comida y muchas aventuras. ¡Gracias por ser parte de la familia!</p>
   </div>
-  <p class="firma entra">Con cariño, para ti.</p>
+  <p class="firma entra">Feliz cumpleaños, cuñadito.<br>Eres el mejor cuñado del mundo.</p>
 </main>
 
 <button id="musica" class="off" aria-label="Música"><div><span></span><span></span><span></span></div></button>
