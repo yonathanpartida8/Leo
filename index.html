@@ -6,229 +6,304 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#fff6ea">
-<title>¡Feliz Cumpleaños, Cuñado!</title>
+<title>Feliz Cumpleaños, Cuñadito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --crema: #fff6ea; --durazno: #ffd9b3; --naranja: #f2771a; --naranja2: #ff9f43;
-    --cafe: #4a2611; --verde: #2a9d8f; --blanco: #ffffff;
+    --cafe: #4a2611; --verde: #2a9d8f; --oro: #e9b44c; --blanco: #ffffff;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
   body::before {
     content: ""; position: fixed; inset: 0; z-index: -1;
     background:
-      radial-gradient(circle at 15% 10%, rgba(255,255,255,.7), transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(42,157,143,.18), transparent 45%),
-      linear-gradient(170deg, var(--crema), var(--durazno) 55%, #ffb27a);
+      radial-gradient(circle at 15% 10%, rgba(255,255,255,.8), transparent 40%),
+      radial-gradient(circle at 90% 85%, rgba(42,157,143,.16), transparent 45%),
+      linear-gradient(170deg, var(--crema), var(--durazno) 60%, #ffb27a);
   }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--crema);
-    color: var(--cafe); text-align: center; overflow-x: hidden;
-    min-height: 100dvh;
-    padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--crema); color: var(--cafe); text-align: center; overflow-x: hidden;
+    min-height: 100dvh; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
   }
   canvas { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
 
-  /* Pantalla de inicio (necesaria para que suene la música en iOS/Android) */
+  /* Sobre de inicio: solo aparece si el navegador bloquea la música automática */
   #inicio {
-    position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 24px; padding: 24px;
+    position: fixed; inset: 0; z-index: 10; display: none; flex-direction: column;
+    align-items: center; justify-content: center; gap: 28px; padding: 24px;
     background: linear-gradient(170deg, var(--crema), var(--durazno));
-    transition: opacity .6s, transform .6s;
+    transition: opacity .7s, transform .7s;
   }
-  #inicio.oculto { opacity: 0; transform: scale(1.1); pointer-events: none; }
-  #inicio p { font-size: 18px; font-weight: 600; }
-  .regalo { font-size: 96px; animation: salto 1.2s infinite; filter: drop-shadow(0 10px 12px rgba(74,38,17,.25)); }
+  #inicio.visible { display: flex; }
+  #inicio.oculto { opacity: 0; transform: scale(1.08); pointer-events: none; }
+  .sobre {
+    width: 200px; height: 130px; position: relative; border-radius: 10px;
+    background: var(--blanco); box-shadow: 0 18px 40px rgba(74,38,17,.2);
+    animation: flotar 3s ease-in-out infinite; --giro: 0deg;
+  }
+  .sobre::before {
+    content: ""; position: absolute; inset: 0 0 auto; height: 70px;
+    background: var(--durazno); clip-path: polygon(0 0, 100% 0, 50% 100%); border-radius: 10px 10px 0 0;
+  }
+  .sello {
+    position: absolute; left: 50%; top: 52px; width: 38px; height: 38px; margin-left: -19px;
+    border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--naranja2), var(--naranja));
+    box-shadow: 0 3px 8px rgba(242,119,26,.5);
+  }
+  #inicio h2 { font-family: "Playfair Display", serif; font-style: italic; font-size: 26px; }
   .boton {
-    border: 0; border-radius: 999px; padding: 16px 32px; font-size: 18px; font-weight: 700;
+    border: 0; border-radius: 999px; padding: 16px 36px; font: 600 17px "Poppins", sans-serif;
     color: var(--blanco); background: linear-gradient(135deg, var(--naranja2), var(--naranja));
     box-shadow: 0 8px 22px rgba(242,119,26,.45); animation: pulso 1.8s infinite;
   }
   .boton:active { transform: scale(.96); }
 
-  main { max-width: 480px; margin: 0 auto; padding: 36px 0 104px; position: relative; z-index: 1; }
+  main { max-width: 480px; margin: 0 auto; padding: 44px 0 110px; position: relative; z-index: 1; }
+  .entra { opacity: 0; transform: translateY(24px); transition: opacity .9s ease, transform .9s ease; }
+  .entra.ver { opacity: 1; transform: none; }
+
+  .pre { font-size: 13px; letter-spacing: .35em; text-transform: uppercase; color: var(--verde); font-weight: 600; }
   h1 {
-    font-size: clamp(38px, 12vw, 62px); line-height: 1.05; font-weight: 900;
-    color: var(--naranja); text-shadow: 0 3px 0 var(--blanco), 0 6px 14px rgba(242,119,26,.3);
+    font-family: "Playfair Display", Georgia, serif; font-weight: 900;
+    font-size: clamp(42px, 13vw, 68px); line-height: 1.02; margin: 10px 0 18px;
+    color: var(--naranja); text-shadow: 0 3px 0 var(--blanco), 0 8px 18px rgba(242,119,26,.3);
   }
-  .sub { font-size: clamp(18px, 5.5vw, 24px); margin: 14px 0 30px; }
-  .sub b {
-    background: var(--verde); color: var(--blanco); padding: 2px 10px; border-radius: 8px;
-    -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  .palabra { display: inline-block; white-space: nowrap; }
+  .letra { display: inline-block; animation: ola 2s ease-in-out infinite; }
+  .carino { font-family: "Playfair Display", serif; font-style: italic; font-size: clamp(24px, 7vw, 32px); }
+  .mejor {
+    display: inline-block; margin: 14px 0 34px; padding: 8px 20px; border-radius: 999px;
+    background: var(--verde); color: var(--blanco); font-weight: 600; font-size: 16px; letter-spacing: .03em;
+    box-shadow: 0 6px 16px rgba(42,157,143,.35);
   }
 
   /* Fotos estilo polaroid: el fondo blanco se funde con el GIF */
   .polaroid {
     background: var(--blanco); border-radius: 18px; padding: 12px 12px 16px;
-    margin: 0 auto 28px; width: min(100%, 340px);
-    box-shadow: 0 14px 30px rgba(74,38,17,.18), 0 2px 6px rgba(74,38,17,.08);
-    transform: rotate(var(--giro)); animation: flotar 4s ease-in-out infinite;
+    margin: 0 auto 30px; width: min(100%, 340px);
+    box-shadow: 0 16px 34px rgba(74,38,17,.18), 0 2px 6px rgba(74,38,17,.08);
+    transform: rotate(var(--giro)); animation: flotar 4.5s ease-in-out infinite;
   }
   .polaroid img { width: 100%; display: block; border-radius: 12px; object-fit: cover; }
   .foto { --giro: -2.5deg; }
   .foto img { aspect-ratio: 4 / 5; object-position: center 35%; }
-  .gif { --giro: 2.5deg; animation-delay: -2s; }
+  .gif { --giro: 2.5deg; animation-delay: -2.2s; }
   .gif img { aspect-ratio: 1 / 1; object-fit: contain; }
-  .polaroid p { padding-top: 12px; font-size: 16px; font-weight: 600; }
+  .polaroid p { padding-top: 12px; font-family: "Playfair Display", serif; font-style: italic; font-size: 18px; }
 
   .mensaje {
-    font-size: 17px; line-height: 1.6; padding: 18px 20px; margin: 4px 0 22px;
-    background: rgba(255,255,255,.6); border-radius: 18px;
+    position: relative; padding: 30px 22px 26px; margin: 8px 0 24px; border-radius: 22px;
+    background: rgba(255,255,255,.7); box-shadow: 0 10px 30px rgba(74,38,17,.1);
   }
-  .velas { font-size: 38px; letter-spacing: 6px; }
+  .mensaje p { font-size: 17px; line-height: 1.7; }
+  .rango { display: flex; justify-content: center; gap: 12px; margin-top: 18px; }
+  .rango div { flex: 1; max-width: 170px; padding: 12px 8px; border-radius: 14px; background: var(--crema); }
+  .rango small { display: block; font-size: 12px; letter-spacing: .15em; text-transform: uppercase; color: var(--verde); font-weight: 600; }
+  .rango b { font-family: "Playfair Display", serif; font-size: clamp(22px, 6.5vw, 28px); color: var(--naranja); }
+  .firma { font-family: "Playfair Display", serif; font-style: italic; font-size: 20px; margin-top: 8px; }
 
   #musica {
     position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 6;
-    width: 56px; height: 56px; border-radius: 50%; border: 0; font-size: 24px;
+    width: 54px; height: 54px; border-radius: 50%; border: 0;
     background: var(--blanco); box-shadow: 0 6px 18px rgba(74,38,17,.25);
+    display: grid; place-items: center;
   }
-  .palabra { display: inline-block; white-space: nowrap; }
-  .letra { display: inline-block; animation: ola 1.6s ease-in-out infinite; }
+  #musica span { display: block; width: 4px; height: 18px; margin: 0 1.5px; border-radius: 2px; background: var(--naranja); animation: barra .9s ease-in-out infinite; }
+  #musica span:nth-child(2) { animation-delay: -.3s; } #musica span:nth-child(3) { animation-delay: -.6s; }
+  #musica div { display: flex; align-items: center; }
+  #musica.off span { animation: none; height: 6px; background: #c9a98f; }
 
   @keyframes flotar { 50% { transform: rotate(var(--giro)) translateY(-8px); } }
-  @keyframes salto { 50% { transform: translateY(-16px) rotate(-6deg); } }
-  @keyframes ola { 50% { transform: translateY(-6px); } }
+  @keyframes ola { 50% { transform: translateY(-5px); color: var(--oro); } }
   @keyframes pulso { 50% { box-shadow: 0 8px 30px rgba(242,119,26,.75); } }
+  @keyframes barra { 50% { height: 6px; } }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
 </style>
 </head>
 <body>
 
 <div id="inicio">
-  <div class="regalo">🎁</div>
-  <p>Tienes una sorpresa 🐾</p>
-  <button class="boton" id="abrir">Toca para abrir tu sorpresa</button>
+  <div class="sobre"><div class="sello"></div></div>
+  <h2>Tienes una sorpresa</h2>
+  <button class="boton" id="abrir">Abrir</button>
 </div>
 
 <canvas id="fx"></canvas>
 
 <main>
-  <h1 id="titulo">¡Feliz Cumpleaños!</h1>
-  <p class="sub">Para el <b>mejor cuñado del mundo</b> 🎉</p>
+  <p class="pre entra">Hoy es tu día</p>
+  <h1 id="titulo" class="entra">¡Feliz Cumpleaños!</h1>
+  <p class="carino entra">Te quiero mucho, cuñadito</p>
+  <span class="mejor entra">El mejor cuñado del mundo</span>
 
-  <div class="polaroid foto">
-    <img src="img/gatito.jpg" alt="Gatito lindo"
-         >
-    <p>Este gatito también te desea un gran día 🐱</p>
+  <div class="polaroid foto entra">
+    <img src="img/gatito.jpg" alt="Gatito lindo">
+    <p>Este gatito también te felicita</p>
   </div>
 
-  <div class="polaroid gif">
-    <img src="gif/cumple.gif" alt="GIF de cumpleaños"
-         >
-    <p>¡A bailar que es tu día! 🕺</p>
+  <div class="polaroid gif entra">
+    <img src="gif/cumple.gif" alt="Gatito bailando">
+    <p>¡A bailar, que es tu día!</p>
   </div>
 
-  <p class="mensaje">
-    Que este año te traiga salud, risas, buena comida y muchas aventuras.
-    ¡Gracias por ser parte de la familia! 🥳
-  </p>
-  <div class="velas">🎂🎈🎊🎈🎂</div>
+  <div class="mensaje entra">
+    <p>Que cumplas muchos años más:</p>
+    <div class="rango">
+      <div><small>Mínimo</small><b class="num" data-fin="500">0</b></div>
+      <div><small>Máximo</small><b class="num" data-fin="10000000">0</b></div>
+    </div>
+  </div>
+  <p class="firma entra">Con cariño, para ti.</p>
 </main>
 
-<button id="musica" aria-label="Música">🔊</button>
+<button id="musica" class="off" aria-label="Música"><div><span></span><span></span><span></span></div></button>
 
 <script>
-// Título con letras que hacen "ola"
-const t = document.getElementById('titulo');
-let i = 0;
+// Título con letras en ola (sin cortar palabras)
+const t = document.getElementById('titulo'); let li = 0;
 t.innerHTML = t.textContent.split(' ').map(w => '<span class="palabra">' + [...w].map(c =>
-  `<span class="letra" style="animation-delay:${i++ * 0.08}s">${c}</span>`).join('') + '</span>').join(' ');
+  `<span class="letra" style="animation-delay:${li++ * 0.09}s">${c}</span>`).join('') + '</span>').join(' ');
 
-// ---------- Confeti y fuegos artificiales ----------
+// Aparición al hacer scroll + contador de años
+const fmt = n => n.toLocaleString('es-MX');
+function contar(el) {
+  const fin = +el.dataset.fin, ini = performance.now(), dur = 2200;
+  (function paso(ahora) {
+    const k = Math.min((ahora - ini) / dur, 1), e = 1 - Math.pow(1 - k, 4);
+    el.textContent = fmt(Math.round(fin * e));
+    if (k < 1) requestAnimationFrame(paso);
+  })(ini);
+}
+const obs = new IntersectionObserver(es => es.forEach(e => {
+  if (!e.isIntersecting) return;
+  e.target.classList.add('ver'); obs.unobserve(e.target);
+  e.target.querySelectorAll('.num').forEach(contar);
+}), { threshold: .2 });
+function mostrar() { document.querySelectorAll('.entra').forEach((el, i) => { el.style.transitionDelay = (i < 4 ? i * .15 : 0) + 's'; obs.observe(el); }); }
+
+// ---------- Confeti, destellos y fuegos artificiales ----------
 const cv = document.getElementById('fx'), ctx = cv.getContext('2d');
-let W, H, dpr = Math.min(window.devicePixelRatio || 1, 2);
+let W, H; const dpr = Math.min(window.devicePixelRatio || 1, 2);
 function ajustar() { W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
 ajustar(); addEventListener('resize', ajustar);
 
-const colores = ['#f2771a', '#ff9f43', '#2a9d8f', '#ffd166', '#ffffff', '#e76f51'];
-const parts = [];
-const rnd = (a, b) => a + Math.random() * (b - a);
+const colores = ['#f2771a', '#ff9f43', '#2a9d8f', '#e9b44c', '#ffffff', '#e76f51'];
+const parts = []; const rnd = (a, b) => a + Math.random() * (b - a);
 
 function confeti(n) {
-  for (let i = 0; i < n; i++) parts.push({
-    x: rnd(0, W), y: rnd(-H, 0), vx: rnd(-1, 1), vy: rnd(2, 4), r: rnd(0, 6.28), vr: rnd(-.2, .2),
-    w: rnd(6, 10), h: rnd(10, 16), c: colores[i % colores.length], tipo: 'c', vida: 999
-  });
+  for (let i = 0; i < n; i++) parts.push({ tipo: 'c', x: rnd(0, W), y: rnd(-H, 0), vx: rnd(-.6, .6), vy: rnd(1.5, 3),
+    r: rnd(0, 6.28), vr: rnd(-.12, .12), w: rnd(6, 9), h: rnd(10, 14), c: colores[i % colores.length] });
+}
+function destellos(n) {
+  for (let i = 0; i < n; i++) parts.push({ tipo: 'd', x: rnd(0, W), y: rnd(0, H), f: rnd(0, 6.28), s: rnd(1.5, 3) });
 }
 function fuego(x, y) {
   const c = colores[Math.floor(rnd(0, colores.length))];
-  for (let i = 0; i < 50; i++) {
-    const a = rnd(0, 6.28), v = rnd(1, 5);
-    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, c, tipo: 'f', vida: 60 });
+  for (let i = 0; i < 60; i++) {
+    const a = rnd(0, 6.28), v = rnd(1, 5.5);
+    parts.push({ tipo: 'f', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, c, vida: 70 });
   }
 }
-
+function estrella(x, y, s) {
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) { const r = i % 2 ? s * .35 : s * 2.2, a = i * Math.PI / 4; ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
+  ctx.fill();
+}
 function loop() {
   ctx.clearRect(0, 0, W, H);
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i];
     if (p.tipo === 'c') {
-      p.x += p.vx + Math.sin(p.y / 40); p.y += p.vy; p.r += p.vr;
+      p.x += p.vx + Math.sin(p.y / 50) * .6; p.y += p.vy; p.r += p.vr;
       if (p.y > H + 20) { p.y = -20; p.x = rnd(0, W); }
       ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
-      ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.cos(p.r * 2));
-      ctx.restore();
+      ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.cos(p.r * 2)); ctx.restore();
+    } else if (p.tipo === 'd') {
+      p.f += .04; ctx.globalAlpha = Math.max(0, Math.sin(p.f)) * .9; ctx.fillStyle = '#e9b44c';
+      estrella(p.x, p.y, p.s); if (p.f > 6.28) { p.f = 0; p.x = rnd(0, W); p.y = rnd(0, H); }
     } else {
       p.x += p.vx; p.y += p.vy; p.vy += .05; p.vx *= .98; p.vida--;
       if (p.vida <= 0) { parts.splice(i, 1); continue; }
-      ctx.globalAlpha = p.vida / 60; ctx.fillStyle = p.c;
-      ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 6.28); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.globalAlpha = p.vida / 70; ctx.fillStyle = p.c;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 6.28); ctx.fill();
     }
+    ctx.globalAlpha = 1;
   }
   requestAnimationFrame(loop);
 }
 loop();
-
-// Toca la pantalla = fuegos artificiales
 addEventListener('pointerdown', e => { if (!e.target.closest('button')) fuego(e.clientX, e.clientY); });
 
-// ---------- Música: "Cumpleaños feliz" generada en el navegador ----------
-let ac, sonando = false, timer;
-const N = { G4: 392, A4: 440, B4: 493.9, C5: 523.3, D5: 587.3, E5: 659.3, F5: 698.5, G5: 784 };
-const melodia = [
-  ['G4',.75],['G4',.25],['A4',1],['G4',1],['C5',1],['B4',2],
-  ['G4',.75],['G4',.25],['A4',1],['G4',1],['D5',1],['C5',2],
-  ['G4',.75],['G4',.25],['G5',1],['E5',1],['C5',1],['B4',1],['A4',2],
-  ['F5',.75],['F5',.25],['E5',1],['C5',1],['D5',1],['C5',3]
-];
-function nota(f, ini, dur) {
-  const o = ac.createOscillator(), g = ac.createGain();
-  o.type = 'triangle'; o.frequency.value = f;
-  g.gain.setValueAtTime(0, ini);
-  g.gain.linearRampToValueAtTime(.25, ini + .03);
-  g.gain.exponentialRampToValueAtTime(.001, ini + dur * .95);
-  o.connect(g).connect(ac.destination); o.start(ini); o.stop(ini + dur);
+// ---------- Música: "Cumpleaños feliz" con piano, bajo y acordes de vals ----------
+let ac, salida, sonando = false, timer;
+const f = n => 440 * Math.pow(2, (n - 69) / 12); // número MIDI -> Hz
+// melodía [nota MIDI, tiempos] en compás de 3/4 (empieza en anacrusa)
+const melodia = [[67,.75],[67,.25],[69,1],[67,1],[72,1],[71,2],[67,.75],[67,.25],[69,1],[67,1],[74,1],[72,2],
+  [67,.75],[67,.25],[79,1],[76,1],[72,1],[71,1],[69,2],[77,.75],[77,.25],[76,1],[72,1],[74,1],[72,3]];
+// acordes por compás (raíz, tercera, quinta)
+const acordes = [[48,52,55],[43,50,55],[43,50,55],[48,52,55],[48,52,55],[41,48,53],[48,52,55],[43,50,55],[48,52,55]];
+
+function iniciarAudio() {
+  ac = new (window.AudioContext || window.webkitAudioContext)();
+  const comp = ac.createDynamicsCompressor(); comp.connect(ac.destination);
+  salida = ac.createGain(); salida.gain.value = .8; salida.connect(comp);
+  // Reverberación suave generada (sin archivos)
+  const rev = ac.createConvolver(), len = ac.sampleRate * 2, ir = ac.createBuffer(2, len, ac.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+  rev.buffer = ir; const mezcla = ac.createGain(); mezcla.gain.value = .25;
+  salida.connect(rev).connect(mezcla).connect(comp);
+}
+// Sonido tipo piano/campanita: armónicos con caída
+function piano(n, ini, dur, vol) {
+  [[1, 1], [2, .35], [3, .12], [4, .06]].forEach(([h, a]) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = f(n) * h;
+    g.gain.setValueAtTime(0, ini);
+    g.gain.linearRampToValueAtTime(vol * a, ini + .01);
+    g.gain.exponentialRampToValueAtTime(.0001, ini + Math.max(dur, .4) * 1.6 / h);
+    o.connect(g).connect(salida); o.start(ini); o.stop(ini + 3);
+  });
 }
 function tocar() {
-  const pulso = .45; let t = ac.currentTime + .1;
-  melodia.forEach(([n, d]) => { nota(N[n], t, d * pulso); nota(N[n] / 2, t, d * pulso); t += d * pulso; });
-  timer = setTimeout(() => { if (sonando) tocar(); }, (t - ac.currentTime + 1) * 1000);
+  const b = .5; let t = ac.currentTime + .15;
+  const inicio = t + b; // el primer compás completo empieza tras la anacrusa (1 tiempo)
+  melodia.forEach(([n, d]) => { piano(n, t, d * b, .22); t += d * b; });
+  acordes.forEach((ch, k) => {
+    const c0 = inicio + k * 3 * b;
+    piano(ch[0], c0, b, .14); // bajo en el tiempo 1
+    [1, 2].forEach(i => ch.forEach(n => piano(n + 12, c0 + i * b, b * .6, .045))); // acorde en 2 y 3
+  });
+  timer = setTimeout(() => { if (sonando) tocar(); }, (t - ac.currentTime + 1.5) * 1000);
 }
-function musicaOn() {
-  ac = ac || new (window.AudioContext || window.webkitAudioContext)();
-  ac.resume(); sonando = true; tocar();
-  document.getElementById('musica').textContent = '🔊';
-}
-function musicaOff() {
-  sonando = false; clearTimeout(timer); ac && ac.suspend();
-  document.getElementById('musica').textContent = '🔇';
-}
-document.getElementById('musica').onclick = () => {
-  if (sonando) { musicaOff(); } else { ac && ac.close(); ac = null; musicaOn(); }
-};
+const btn = document.getElementById('musica');
+function musicaOn() { if (!ac) iniciarAudio(); ac.resume(); if (!sonando) { sonando = true; tocar(); } btn.classList.remove('off'); }
+function musicaOff() { sonando = false; clearTimeout(timer); ac && ac.suspend(); btn.classList.add('off'); }
+btn.onclick = () => { if (sonando) musicaOff(); else { if (ac) { ac.close(); ac = null; } musicaOn(); } };
 
-// Abrir sorpresa
-document.getElementById('abrir').onclick = () => {
+// ---------- Arranque ----------
+let empezado = false;
+function celebrar() {
+  if (empezado) return; empezado = true;
   document.getElementById('inicio').classList.add('oculto');
-  musicaOn(); confeti(120);
-  if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-  let k = 0; const show = setInterval(() => {
-    fuego(rnd(W * .15, W * .85), rnd(H * .1, H * .45));
-    if (++k > 6) clearInterval(show);
-  }, 350);
-  setInterval(() => fuego(rnd(W * .15, W * .85), rnd(H * .1, H * .4)), 2500);
-};
+  mostrar(); confeti(110); destellos(26);
+  if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+  let k = 0; const show = setInterval(() => { fuego(rnd(W * .15, W * .85), rnd(H * .12, H * .45)); if (++k > 6) clearInterval(show); }, 380);
+  setInterval(() => fuego(rnd(W * .15, W * .85), rnd(H * .1, H * .4)), 2800);
+}
+// Intenta sonar sola; si el teléfono lo bloquea, muestra el sobre
+iniciarAudio();
+ac.resume().catch(() => {});
+setTimeout(() => {
+  if (ac.state === 'running') { musicaOn(); celebrar(); }
+  else document.getElementById('inicio').classList.add('visible');
+}, 300);
+document.getElementById('abrir').onclick = () => { musicaOn(); celebrar(); };
+// Por si acaso: el primer toque en cualquier parte arranca la música
+['pointerup', 'touchend', 'keydown'].forEach(ev => addEventListener(ev, () => { if (!sonando && empezado) musicaOn(); }, { once: true }));
 </script>
 </body>
 </html>
