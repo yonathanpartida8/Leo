@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1b1446">
+<title>¡Feliz Cumpleaños, Cuñado!</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(160deg, #1b1446, #3a1c71 50%, #d76d77);
+    background-attachment: fixed;
+    color: #fff; text-align: center; overflow-x: hidden;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  }
+  canvas { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+
+  /* Pantalla de inicio (necesaria para que suene la música en iOS/Android) */
+  #inicio {
+    position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px;
+    background: #1b1446; transition: opacity .6s;
+  }
+  #inicio.oculto { opacity: 0; pointer-events: none; }
+  .regalo { font-size: 96px; animation: salto 1.2s infinite; }
+  .boton {
+    border: 0; border-radius: 999px; padding: 16px 32px; font-size: 18px; font-weight: 700;
+    color: #1b1446; background: #ffd23f; box-shadow: 0 6px 20px rgba(255,210,63,.4);
+  }
+  .boton:active { transform: scale(.96); }
+
+  main { max-width: 520px; margin: 0 auto; padding: 32px 0 96px; position: relative; z-index: 1; }
+  h1 {
+    font-size: clamp(36px, 11vw, 60px); line-height: 1.05; font-weight: 900;
+    background: linear-gradient(90deg, #ffd23f, #ff8c42, #4ecdc4, #ffd23f);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: brillo 4s linear infinite;
+  }
+  .sub { font-size: clamp(18px, 5.5vw, 24px); margin: 12px 0 28px; opacity: .95; }
+  .sub b { color: #ffd23f; }
+
+  .tarjeta {
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+    border-radius: 24px; padding: 12px; margin-bottom: 20px;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+    animation: flotar 4s ease-in-out infinite;
+  }
+  .tarjeta img { width: 100%; border-radius: 16px; display: block; }
+  .tarjeta p { padding: 10px 4px 2px; font-size: 15px; opacity: .85; }
+  .tarjeta:nth-of-type(2) { animation-delay: -2s; }
+
+  .mensaje { font-size: 17px; line-height: 1.6; padding: 8px 4px 24px; }
+  .velas { font-size: 40px; letter-spacing: 6px; }
+
+  #musica {
+    position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 6;
+    width: 56px; height: 56px; border-radius: 50%; border: 0; font-size: 24px;
+    background: #ffd23f; box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  }
+  .letra { display: inline-block; animation: ola 1.6s ease-in-out infinite; }
+
+  @keyframes brillo { to { background-position: 300% 0; } }
+  @keyframes flotar { 50% { transform: translateY(-8px); } }
+  @keyframes salto { 50% { transform: translateY(-16px) rotate(-6deg); } }
+  @keyframes ola { 50% { transform: translateY(-6px); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div id="inicio">
+  <div class="regalo">🎁</div>
+  <button class="boton" id="abrir">Toca para abrir tu sorpresa</button>
+</div>
+
+<canvas id="fx"></canvas>
+
+<main>
+  <h1 id="titulo">¡Feliz Cumpleaños!</h1>
+  <p class="sub">Para el <b>mejor cuñado del mundo</b> 🎉</p>
+
+  <div class="tarjeta">
+    <!-- Pon tu foto en img/gatito.jpg; si no existe, se usa una de internet -->
+    <img src="img/gatito.jpg" alt="Gatito lindo"
+         onerror="this.onerror=null;this.src='https://cataas.com/cat/cute?width=600'">
+    <p>Este gatito también te desea un gran día 🐱</p>
+  </div>
+
+  <div class="tarjeta">
+    <!-- Pon tu GIF en gif/cumple.gif -->
+    <img src="gif/cumple.gif" alt="GIF de cumpleaños"
+         onerror="this.closest('.tarjeta').style.display='none'">
+  </div>
+
+  <p class="mensaje">
+    Que este año te traiga salud, risas, buena comida y muchas aventuras.
+    ¡Gracias por ser parte de la familia! 🥳
+  </p>
+  <div class="velas">🎂🎈🎊🎈🎂</div>
+</main>
+
+<button id="musica" aria-label="Música">🔊</button>
+
+<script>
+// Título con letras que hacen "ola"
+const t = document.getElementById('titulo');
+t.innerHTML = [...t.textContent].map((c, i) =>
+  `<span class="letra" style="animation-delay:${i * 0.08}s">${c === ' ' ? '&nbsp;' : c}</span>`).join('');
+
+// ---------- Confeti y fuegos artificiales ----------
+const cv = document.getElementById('fx'), ctx = cv.getContext('2d');
+let W, H, dpr = Math.min(window.devicePixelRatio || 1, 2);
+function ajustar() { W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+ajustar(); addEventListener('resize', ajustar);
+
+const colores = ['#ffd23f', '#ff8c42', '#4ecdc4', '#ffffff', '#a78bfa', '#5eead4'];
+const parts = [];
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+function confeti(n) {
+  for (let i = 0; i < n; i++) parts.push({
+    x: rnd(0, W), y: rnd(-H, 0), vx: rnd(-1, 1), vy: rnd(2, 4), r: rnd(0, 6.28), vr: rnd(-.2, .2),
+    w: rnd(6, 10), h: rnd(10, 16), c: colores[i % colores.length], tipo: 'c', vida: 999
+  });
+}
+function fuego(x, y) {
+  const c = colores[Math.floor(rnd(0, colores.length))];
+  for (let i = 0; i < 50; i++) {
+    const a = rnd(0, 6.28), v = rnd(1, 5);
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, c, tipo: 'f', vida: 60 });
+  }
+}
+
+function loop() {
+  ctx.clearRect(0, 0, W, H);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    if (p.tipo === 'c') {
+      p.x += p.vx + Math.sin(p.y / 40); p.y += p.vy; p.r += p.vr;
+      if (p.y > H + 20) { p.y = -20; p.x = rnd(0, W); }
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.cos(p.r * 2));
+      ctx.restore();
+    } else {
+      p.x += p.vx; p.y += p.vy; p.vy += .05; p.vx *= .98; p.vida--;
+      if (p.vida <= 0) { parts.splice(i, 1); continue; }
+      ctx.globalAlpha = p.vida / 60; ctx.fillStyle = p.c;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, 6.28); ctx.fill(); ctx.globalAlpha = 1;
+    }
+  }
+  requestAnimationFrame(loop);
+}
+loop();
+
+// Toca la pantalla = fuegos artificiales
+addEventListener('pointerdown', e => { if (!e.target.closest('button')) fuego(e.clientX, e.clientY); });
+
+// ---------- Música: "Cumpleaños feliz" generada en el navegador ----------
+let ac, sonando = false, timer;
+const N = { G4: 392, A4: 440, B4: 493.9, C5: 523.3, D5: 587.3, E5: 659.3, F5: 698.5, G5: 784 };
+const melodia = [
+  ['G4',.75],['G4',.25],['A4',1],['G4',1],['C5',1],['B4',2],
+  ['G4',.75],['G4',.25],['A4',1],['G4',1],['D5',1],['C5',2],
+  ['G4',.75],['G4',.25],['G5',1],['E5',1],['C5',1],['B4',1],['A4',2],
+  ['F5',.75],['F5',.25],['E5',1],['C5',1],['D5',1],['C5',3]
+];
+function nota(f, ini, dur) {
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'triangle'; o.frequency.value = f;
+  g.gain.setValueAtTime(0, ini);
+  g.gain.linearRampToValueAtTime(.25, ini + .03);
+  g.gain.exponentialRampToValueAtTime(.001, ini + dur * .95);
+  o.connect(g).connect(ac.destination); o.start(ini); o.stop(ini + dur);
+}
+function tocar() {
+  const pulso = .45; let t = ac.currentTime + .1;
+  melodia.forEach(([n, d]) => { nota(N[n], t, d * pulso); nota(N[n] / 2, t, d * pulso); t += d * pulso; });
+  timer = setTimeout(() => { if (sonando) tocar(); }, (t - ac.currentTime + 1) * 1000);
+}
+function musicaOn() {
+  ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+  ac.resume(); sonando = true; tocar();
+  document.getElementById('musica').textContent = '🔊';
+}
+function musicaOff() {
+  sonando = false; clearTimeout(timer); ac && ac.suspend();
+  document.getElementById('musica').textContent = '🔇';
+}
+document.getElementById('musica').onclick = () => {
+  if (sonando) { musicaOff(); } else { ac && ac.close(); ac = null; musicaOn(); }
+};
+
+// Abrir sorpresa
+document.getElementById('abrir').onclick = () => {
+  document.getElementById('inicio').classList.add('oculto');
+  musicaOn(); confeti(120);
+  if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+  let k = 0; const show = setInterval(() => {
+    fuego(rnd(W * .15, W * .85), rnd(H * .1, H * .45));
+    if (++k > 6) clearInterval(show);
+  }, 350);
+  setInterval(() => fuego(rnd(W * .15, W * .85), rnd(H * .1, H * .4)), 2500);
+};
+</script>
+</body>
+</html>
