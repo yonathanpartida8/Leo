@@ -153,8 +153,12 @@
     background: linear-gradient(90deg, var(--naranja) 0 20%, #333 20% 80%, var(--naranja) 80%);
   }
   .balon {
-    position: absolute; left: 50%; bottom: 34px; width: 54px; height: 54px; margin-left: -27px; z-index: 3;
-    cursor: grab; filter: drop-shadow(0 6px 4px rgba(0,0,0,.3)); will-change: transform;
+    position: absolute; left: 0; top: 0; width: 54px; height: 54px; z-index: 3;
+    cursor: grab; will-change: transform; touch-action: none;
+  }
+  .sombra {
+    position: absolute; left: 0; top: 0; width: 50px; height: 14px; z-index: 2; border-radius: 50%;
+    background: radial-gradient(rgba(0,0,0,.4), transparent 70%); will-change: transform, opacity;
   }
   .aviso {
     position: absolute; inset: 0; display: grid; place-items: center; z-index: 4; pointer-events: none;
@@ -204,6 +208,7 @@
     <div class="cancha" id="cancha">
       <div class="porteria" id="porteria"></div>
       <div class="portero" id="portero"></div>
+      <div class="sombra" id="sombra"></div>
       <svg class="balon" id="balon" viewBox="0 0 100 100" aria-label="Balón">
         <circle cx="50" cy="50" r="47" fill="#fff" stroke="#222" stroke-width="3"/>
         <polygon points="50,32 67,44 61,64 39,64 33,44" fill="#222"/>
@@ -369,59 +374,94 @@ document.addEventListener('visibilitychange', () => {
 });
 addEventListener('pagehide', alSalir);
 
-// ---------- Mini juego de fútbol ----------
+// ---------- Mini juego de fútbol (física 2.5D: avance, altura, efecto y rebotes) ----------
 (() => {
-  const cancha = document.getElementById('cancha'), balon = document.getElementById('balon');
-  const portero = document.getElementById('portero'), porteria = document.getElementById('porteria');
-  const aviso = document.getElementById('aviso');
-  let arrastre = null, volando = false;
-  const pos = (x, y, esc = 1, rot = 0) => balon.style.transform = `translate(${x}px, ${y}px) scale(${esc}) rotate(${rot}deg)`;
+  const cancha = document.getElementById('cancha'), balon = document.getElementById('balon'), sombra = document.getElementById('sombra');
+  const portero = document.getElementById('portero'), porteria = document.getElementById('porteria'), aviso = document.getElementById('aviso');
+  const R = 27, G = 1100, LARGUERO = 74;
+  let W, Y0, D, b = null, arrastre = null, jugando = false, ultimo;
+
+  function medir() {
+    const c = cancha.getBoundingClientRect(), p = porteria.getBoundingClientRect();
+    W = c.width; Y0 = c.height - 34 - R; D = Y0 - (p.bottom - c.top);
+    return { c, p };
+  }
+  function dibujar(x, d, h) {
+    const s = 1 - .45 * Math.min(d, D + 40) / D, y = Y0 - d - h * s;
+    balon.style.transform = `translate(${x - R}px, ${y - R}px) scale(${s}) rotate(${(b ? b.giro : 0)}deg)`;
+    sombra.style.transform = `translate(${x - 25}px, ${Y0 - d + R * s - 9}px) scale(${s * Math.max(.5, 1 - h / 400)})`;
+    sombra.style.opacity = Math.max(.25, 1 - h / 300);
+  }
+  function colocar() { medir(); b = null; dibujar(W / 2, 0, 0); }
+  colocar(); addEventListener('resize', () => { if (!jugando) colocar(); });
 
   function mensaje(txt) { aviso.textContent = txt; aviso.classList.remove('ver'); void aviso.offsetWidth; aviso.classList.add('ver'); }
-  function reiniciar() { balon.style.transition = 'transform .4s ease'; pos(0, 0); setTimeout(() => { balon.style.transition = ''; volando = false; }, 400); }
 
   balon.addEventListener('pointerdown', e => {
-    if (volando) return; balon.setPointerCapture(e.pointerId);
+    if (jugando) return; balon.setPointerCapture(e.pointerId); medir();
     arrastre = { x0: e.clientX, y0: e.clientY, pts: [[e.clientX, e.clientY, performance.now()]] };
   });
   balon.addEventListener('pointermove', e => {
     if (!arrastre) return;
-    const dx = e.clientX - arrastre.x0, dy = Math.min(0, e.clientY - arrastre.y0);
-    pos(dx * .3, dy * .3);
-    arrastre.pts.push([e.clientX, e.clientY, performance.now()]); if (arrastre.pts.length > 6) arrastre.pts.shift();
+    dibujar(W / 2 + (e.clientX - arrastre.x0) * .25, Math.max(0, (arrastre.y0 - e.clientY) * .15), 0);
+    arrastre.pts.push([e.clientX, e.clientY, performance.now()]); if (arrastre.pts.length > 8) arrastre.pts.shift();
   });
   balon.addEventListener('pointerup', e => {
     if (!arrastre) return;
-    const [x1, y1, t1] = arrastre.pts[0], dt = Math.max(16, performance.now() - t1);
-    let vx = (e.clientX - x1) / dt, vy = (e.clientY - y1) / dt; arrastre = null;
-    if (vy > -0.3) { reiniciar(); return; }          // deslizamiento muy flojo
-    disparar(vx / -vy);                               // dirección horizontal por cada px que sube
+    const pts = arrastre.pts, [x1, y1, t1] = pts[0], dt = Math.max(16, performance.now() - t1) / 1000;
+    const svx = (e.clientX - x1) / dt, svy = (e.clientY - y1) / dt; arrastre = null;
+    if (svy > -250) return colocar();                       // deslizamiento muy flojo
+    const vel = Math.hypot(svx, svy);
+    // Efecto: cuánto se curva el final del deslizamiento respecto al total
+    const m = pts[Math.floor(pts.length / 2)], d1 = (m[0] - x1) / Math.min(-1, m[1] - y1), d2 = (e.clientX - m[0]) / Math.min(-1, e.clientY - m[1]);
+    b = { x: W / 2, d: 0, h: 0, vd: Math.min(Math.max(-svy * .8, 540), 1000), vx: 0,
+          vh: Math.min(Math.max(vel * .28, 120), 520), efecto: Math.max(-900, Math.min(900, (d2 - d1) * 500)),
+          giro: 0, cruzo: false, gol: false, t: 0 };
+    b.vx = (svx / -svy) * b.vd * .9;                       // apunta hacia donde se desliza
+    jugando = true; ultimo = performance.now(); requestAnimationFrame(paso);
   });
 
-  function disparar(dir) {
-    volando = true;
-    const cr = cancha.getBoundingClientRect(), br = balon.getBoundingClientRect();
-    const sube = br.top - cr.top - 34;                // hasta la línea de gol
-    const finX = dir * sube, ini = performance.now(), dur = 550;
-    (function anim(ahora) {
-      const k = Math.min((ahora - ini) / dur, 1), e = 1 - Math.pow(1 - k, 2);
-      pos(finX * e, -sube * e - Math.sin(k * Math.PI) * 30, 1 - .45 * e, k * 720);
-      if (k < 1) return requestAnimationFrame(anim);
-      resultado();
-    })(ini);
+  function paso(ahora) {
+    const dt = Math.min(.033, (ahora - ultimo) / 1000); ultimo = ahora; b.t += dt;
+    b.vx += b.efecto * dt * (b.h > 0 ? 1 : 0); b.x += b.vx * dt; b.d += b.vd * dt;
+    b.vh -= G * dt; b.h += b.vh * dt; b.giro += (b.vd + Math.abs(b.vx)) * dt * 1.5;
+    if (b.h < 0) { b.h = 0; b.vh = Math.abs(b.vh) > 120 ? -b.vh * .45 : 0; b.vd *= .9; b.vx *= .9; b.efecto *= .5; }
+    if (b.x < R || b.x > W - R) { b.x = Math.max(R, Math.min(W - R, b.x)); b.vx *= -.5; }
+    if (!b.cruzo && b.d >= D) revisar();
+    if (b.gol && b.d > D + 34) { b.d = D + 34; b.vd = 0; b.vx *= .5; }   // la red frena el balón
+    if (b.d < 0) { b.d = 0; b.vd = 0; }
+    dibujar(b.x, b.d, b.h);
+    const quieto = Math.abs(b.vd) < 15 && b.h === 0;
+    if (b.t > 2.6 || (quieto && b.t > .8) || b.d > D + 160) { jugando = false; return setTimeout(volver, 500); }
+    requestAnimationFrame(paso);
   }
-  function resultado() {
-    const b = balon.getBoundingClientRect(), cx = b.left + b.width / 2;
-    const p = porteria.getBoundingClientRect(), g = portero.getBoundingClientRect();
-    const dentro = cx > p.left + 6 && cx < p.right - 6;
-    const atajada = dentro && cx > g.left && cx < g.right;
-    if (dentro && !atajada) {
-      mensaje('¡GOOOL!');
-      porteria.classList.remove('red'); void porteria.offsetWidth; porteria.classList.add('red');
-      fuego(cx, b.top); fuego(p.left + 20, p.top + 20); fuego(p.right - 20, p.top + 20); confeti(40);
-      if (navigator.vibrate) navigator.vibrate([80, 50, 120]);
+  function revisar() {
+    b.cruzo = true;
+    const { c, p } = medir(), g = portero.getBoundingClientRect();
+    const izq = p.left - c.left + 6, der = p.right - c.left - 6, s = .55, alto = b.h * s;
+    const gx1 = g.left - c.left, gx2 = g.right - c.left;
+    const enPoste = (Math.abs(b.x - izq) < R * s || Math.abs(b.x - der) < R * s) && alto < LARGUERO;
+    if (enPoste || (Math.abs(alto - LARGUERO) < R * s && b.x > izq && b.x < der)) {        // poste o larguero
+      b.vd = -b.vd * .45; b.vx = (b.x < (izq + der) / 2 ? -1 : 1) * 120; b.vh = 180;
+    } else if (b.x > izq && b.x < der && alto < LARGUERO) {
+      if (b.x > gx1 - 10 && b.x < gx2 + 10 && alto < 60) {                                  // atajada
+        b.vd = -b.vd * .35; b.vx += (b.x - (gx1 + gx2) / 2) * 6; b.vh = 220;
+      } else {
+        b.gol = true; b.vd *= .35; b.vx *= .3; b.efecto = 0; mensaje('¡GOOOL!');
+        porteria.classList.remove('red'); void porteria.offsetWidth; porteria.classList.add('red');
+        const bx = c.left + b.x, by = p.top + 30;
+        fuego(bx, by); fuego(p.left + 20, p.top + 10); fuego(p.right - 20, p.top + 10); confeti(40);
+        if (navigator.vibrate) navigator.vibrate([80, 50, 120]);
+      }
     }
-    setTimeout(reiniciar, 900);
+  }
+  function volver() {
+    const desde = { ...b }, ini = performance.now();
+    (function anim(t) {
+      const k = Math.min((t - ini) / 450, 1), e = k * (2 - k);
+      dibujar(desde.x + (W / 2 - desde.x) * e, desde.d * (1 - e), Math.sin(k * Math.PI) * 40);
+      if (k < 1) requestAnimationFrame(anim); else colocar();
+    })(ini);
   }
 })();
 
